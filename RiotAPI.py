@@ -1,0 +1,126 @@
+import requests
+import matplotlib.pyplot as plt
+import json
+
+
+class RiotAPI:
+    def __init__(self):
+        self.APIKey = "RGAPI-66dea204-ae2a-4a39-9511-4f9cdc2f0b0a"
+        self.basic_url = "https://na1.api.riotgames.com/lol/"
+
+    def getAccountID(self, summonerName):
+        url = self.basic_url + "summoner/v3/summoners/by-name/" + summonerName
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+        try:
+            accountID = data["accountId"]
+            return accountID
+        except:
+            if (data["status"]["status_code"] == 429):
+                print ("Please wait for API cooling down")
+            elif (data["status"]["status_code"] == 404):
+                print ("Summoner not found")
+                return ("not found")
+            else:
+                return None
+    def get_Champion_Dictionary(self):
+        url = self.basic_url + "static-data/v3/champions"
+        params = {}
+        params['locale'] = "en_US"
+        params['dataById'] = 'false'
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+        try:
+            champion_dict = {data["data"][i]["id"]:data["data"][i]["name"] for i in data["data"]}
+            return champion_dict
+        except:
+            if (data["status"]["status_code"] == 429):
+                print ("Please wait for API cooling down")
+            elif (data["status"]["status_code"] == 404):
+                print ("Summoner not found")
+                return ("not found")
+            else:
+                return None
+
+
+    def getRecent50Matches(self, summonerName):
+        url = self.basic_url + "match/v3/matchlists/by-account/" + str(self.getAccountID(summonerName))
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        try:
+            data = response.json()
+            return data["matches"][:50]
+        except:
+            if (data["status"]["status_code"] == 429):
+                print ("Please wait for API cooling down")
+            elif (data["status"]["status_code"] == 404):
+                print ("Summoner not found")
+                return ("not found")
+            else:
+                return None
+    def get_gold(self,summonerName, matchID, index):
+        url = self.basic_url + "/match/v3/matches/" + str(matchID)
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+        return data["participants"][index]["stats"]["goldEarned"]
+    def get_match_data(self, matchID):
+        url = self.basic_url + "match/v3/matches/" + str(matchID)
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+        return data
+    def get_match_data_by_name(self, summnonerName):
+        recent = self.getRecent50Matches(summnonerName)
+        data = []
+        if (recent == None):
+            return IOError
+        for i in recent[:5]:
+            data.append(self.get_match_data(i['gameId']))
+        return data
+
+
+    def get_total_damage(self,summonerName, matchID, index):
+        url = self.basic_url + "match/v3/matches/" + str(matchID)
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+        return data["participants"][index]["stats"]["totalDamageDealtToChampions"]
+
+    def get_total_kills(self,summonerName, matchID, index):
+        url = self.basic_url + "match/v3/matches/" + str(matchID)
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+        return data["participants"][index]["stats"]["kills"]
+
+    def get_assists(self,summonerName, matchID, index):
+        url = self.basic_url + "match/v3/matches/" + str(matchID)
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+        return data["participants"][index]["stats"]["assists"]
+
+    def get_version(self):
+        url = "https://ddragon.leagueoflegends.com/api/versions.json"
+        response = requests.get(url)
+        v = response.json()
+        return (v[0])
+
+    def get_champions(self):
+        with open("champion.json", encoding='utf-8') as f:
+            data = json.load(f)
+        return data
+
+    def get_champion_dict(self):
+        data = self.get_champions()
+        champion_dict = {data["data"][i]["key"]: data["data"][i]["name"] for i in data["data"]}
