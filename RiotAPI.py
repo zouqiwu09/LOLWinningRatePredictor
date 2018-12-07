@@ -70,7 +70,7 @@ class RiotAPI:
         response = requests.get(url, params=params)
         try:
             data = response.json()
-            return data["matches"][:2]
+            return data["matches"][:30]
         except:
             if (data["status"]["status_code"] == 429):
                 print ("Please wait for API cooling down")

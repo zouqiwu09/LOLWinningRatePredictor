@@ -108,14 +108,23 @@ def crawl_data(match_data):
     for i in range(5):
         championScore, totalScore = api.get_Individual_Score(summonerIdList1[i], championList1[i])
         team1_total_score = (team1_total_score[0] + championScore, team1_total_score[1] + totalScore)
+    combo1 = get_champion_combo(championList1)
     for i in range(5):
         championScore, totalScore = api.get_Individual_Score(summonerIdList2[i], championList2[i])
         team2_total_score = (team2_total_score[0] + championScore, team2_total_score[1] + totalScore)
+    combo2 = get_champion_combo(championList2)
 
     with open("crawled_data.csv", "a+", newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow([str(gameId), str(gameDuration), str(team1Rank-team2Rank), str(team1_total_score[0]-team2_total_score[0]), str(team1_total_score[1]-team2_total_score[1]), str(team1_win)])
-        writer.writerow([str(gameId), str(gameDuration), str(team2Rank-team1Rank), str(team2_total_score[0]-team1_total_score[0]), str(team2_total_score[1]-team1_total_score[1]), str(team2_win)])
+        team1_data = [str(gameId), str(gameDuration), str(team1Rank-team2Rank), str(team1_total_score[0]-team2_total_score[0]), str(team1_total_score[1]-team2_total_score[1])]
+        team2_data = [str(gameId), str(gameDuration), str(team2Rank-team1Rank), str(team2_total_score[0]-team1_total_score[0]), str(team2_total_score[1]-team1_total_score[1])]
+
+        team1_data.extend(combo1)
+        team1_data.append(team1_win)
+        team2_data.extend(combo2)
+        team2_data.append(team2_win)
+        writer.writerow(team1_data)
+        writer.writerow(team2_data)
 
     return accountIdList
 
@@ -124,6 +133,13 @@ def crawl_data(match_data):
 
 # pprint.pprint(api.get_Individual_Score(32604148))
 # print(api.get_Individual_Score(70311457,245))
+
+
+# id = api.getAccountID("ethreal9")
+# matches = api.getRecent50Matches("ethreal9")
+# match_data = api.get_match_data(matches[0]['gameId'])
+# pprint.pprint(match_data)
+
 
 summoner_list = [ini]
 crawler_master(summoner_list)
