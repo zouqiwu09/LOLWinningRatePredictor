@@ -1,6 +1,7 @@
 import requests
 import matplotlib.pyplot as plt
 import json
+import time
 
 
 class RiotAPI:
@@ -25,6 +26,17 @@ class RiotAPI:
                 return ("not found")
             else:
                 return None
+
+    def getSummonerID(self, summonerName):
+        url = self.basic_url + "summoner/v3/summoners/by-name/" + summonerName
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+
+        summonerId = data["id"]
+        return summonerId
+
     def get_Champion_Dictionary(self):
         url = self.basic_url + "static-data/v3/champions"
         params = {}
@@ -47,13 +59,18 @@ class RiotAPI:
 
 
     def getRecent50Matches(self, summonerName):
-        url = self.basic_url + "match/v3/matchlists/by-account/" + str(self.getAccountID(summonerName))
+        if(type(summonerName) is str):
+            accountId = str(self.getAccountID(summonerName))
+        else:
+            accountId = str(summonerName)
+        url = self.basic_url + "match/v3/matchlists/by-account/" + accountId
+
         params = {}
         params['api_key'] = self.APIKey
         response = requests.get(url, params=params)
         try:
             data = response.json()
-            return data["matches"][:50]
+            return data["matches"][:2]
         except:
             if (data["status"]["status_code"] == 429):
                 print ("Please wait for API cooling down")
@@ -124,3 +141,30 @@ class RiotAPI:
     def get_champion_dict(self):
         data = self.get_champions()
         champion_dict = {data["data"][i]["key"]: data["data"][i]["name"] for i in data["data"]}
+
+    def get_Individual_Score(self, summonerId, championId):
+        url = self.basic_url + "champion-mastery/v3/scores/by-summoner/" + str(summonerId)
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+        total_score = data
+        url = self.basic_url + "champion-mastery/v3/champion-masteries/by-summoner/" + str(summonerId) + "/by-champion/" + str(championId)
+        params = {}
+        params['api_key'] = self.APIKey
+        response = requests.get(url, params=params)
+        data = response.json()
+        try:
+            champion_score = data["championPoints"]
+        except Exception as e:
+            print (e)
+            if (data["status"]["status_code"] == 429):
+                print ("Please wait for API cooling down")
+                time.sleep(60)
+                response = requests.get(url, params=params)
+                data = response.json()
+                champion_score = data["championPoints"]
+            else:
+                print ("Other exceptions")
+
+        return [champion_score, total_score]

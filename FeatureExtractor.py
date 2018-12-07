@@ -16,3 +16,4 @@ def get_rank_score(rank):
         score = 12
     elif (rank == "CHALLENGER"):
         score = 15
+    return score
